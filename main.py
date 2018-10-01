@@ -45,7 +45,7 @@ notch_center_y = np.array(notch_center_y)
 im_center_x = np.array(im_center_x)
 im_center_y = np.array(im_center_y)
 
-if len(sys.argv==1):
+if len(sys.argv)==1:
     pix_mm = 1275/8
 else:
     pix_mm = float(sys.argv[1])
