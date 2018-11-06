@@ -27,7 +27,7 @@ def cv_remove_small_objects(im, min_size):
 
 
 def binarize(im):
-    binary_local = im = cv2.adaptiveThreshold(
+    binary_local = cv2.adaptiveThreshold(
         src=np.array(cv2.medianBlur(im, 5), dtype=np.uint8),
         maxValue=255,
         adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -45,16 +45,31 @@ def binarize(im):
     return cleaned
 
 
-def get_next_notch_center(im):
+def get_next_notch_center(im, clf=None):
+    # разбиваем изображение на отдельные figures
     nb_components, output, stats, centroids = \
         cv2.connectedComponentsWithStats(np.array(im, dtype=np.uint8), connectivity=4)
 
-    stats = np.array(stats)
-    stats = stats[:, 2:5]
+    # отрезаем 1й элемент - фон
+    stats = stats[1:]
+    centroids = centroids[1:]
 
+    # координаты центра фото
     c_y, c_x = [s / 2 for s in im.shape]
-    dists = [((c_x - x) ** 2 + (c_y - y) ** 2) ** .5 for x, y in centroids[1:]]
-    nh_ix = dists.index(min(dists)) + 1
+
+    # определяем notches среди figures
+    # labels = clf.predict(stats[:, 2:5])
+
+    # вычисляем дистанцию от центра каждой figure до центра экрана
+    dists = [((c_x - x) ** 2 + (c_y - y) ** 2) ** .5 for x, y in centroids]
+
+    # dists = [d for d, l in zip(dists, labels) if l]
+    # centroids = [c for c, l in zip(centroids, labels) if l]
+
+    if len(dists) == 0:
+        raise LackOfNotch()
+
+    nh_ix = dists.index(min(dists))
 
     x, y = centroids[nh_ix]
     x, y = x - c_x, y - c_y
